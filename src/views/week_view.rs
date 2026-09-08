@@ -112,29 +112,60 @@ fn build_days(
     // Captures the flag and nothing else. A handler owned by the adjustment
     // that captured the scrolled window — which owns that adjustment — would be
     // a reference cycle of exactly the kind `gui_leaks` exists to catch.
-    let placed = Cell::new(false);
+    let done = Cell::new(false);
     scrolled.vadjustment().connect_changed(move |adjustment| {
-        if placed.get() || !scroll_range_is_ready(adjustment.upper(), adjustment.page_size()) {
+        if done.get() {
             return;
         }
-        placed.set(true);
-        adjustment.set_value(target);
+        match opening_scroll_action(adjustment.upper(), adjustment.page_size(), target) {
+            OpeningScroll::Wait => {}
+            OpeningScroll::PlaceAndWatch => adjustment.set_value(target),
+            OpeningScroll::PlaceAndFinish => {
+                adjustment.set_value(target);
+                done.set(true);
+            }
+        }
     });
 
     root.append(&scrolled);
     root.upcast()
 }
 
-/// Whether a scrolled window's vertical adjustment has been given a real range
-/// yet — the moment at which placing the initial scroll will stick.
+/// What a `changed` on the timed grid's adjustment should do about the scroll
+/// position the page is meant to open at.
 ///
-/// Before the grid is allocated, `upper` and `page_size` are both zero and
-/// `set_value` clamps every target to zero, so the placement has to wait for
-/// the adjustment to report a range. It must not wait for a *scrollable*
-/// range: a grid shorter than its viewport never gets one, and a placement
-/// that waits forever leaves the handler live to yank a later scroll back.
-fn scroll_range_is_ready(upper: f64, page_size: f64) -> bool {
-    upper > 0.0 && page_size > 0.0
+/// The range arrives in stages. Before the grid is measured, `upper` and
+/// `page_size` are zero and `set_value` clamps any target to zero. Then the
+/// viewport is sized but the grid is still growing, so `upper` is real but too
+/// small — a target set now clamps *short*, which looks like the page opening
+/// at the wrong hour. Only once `upper - page_size` covers the target does a
+/// placement actually hold.
+///
+/// Placing on the way up rather than waiting for the final range matters,
+/// because a single snapshot cannot tell a grid that is still growing from one
+/// that is genuinely shorter than its viewport. So an unreachable target keeps
+/// watching rather than declaring itself done: re-placing costs nothing when
+/// there is nothing to scroll — the value clamps to where it already sits —
+/// whereas finishing early on a grid that was merely mid-measurement would
+/// strand that page at midnight.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum OpeningScroll {
+    /// No usable range yet; anything set now clamps to zero.
+    Wait,
+    /// Place it, but keep watching — this may still clamp short.
+    PlaceAndWatch,
+    /// Place it and stop watching; the target is reachable, so it will hold.
+    PlaceAndFinish,
+}
+
+fn opening_scroll_action(upper: f64, page_size: f64, target: f64) -> OpeningScroll {
+    if upper <= 0.0 || page_size <= 0.0 {
+        OpeningScroll::Wait
+    } else if upper - page_size >= target {
+        OpeningScroll::PlaceAndFinish
+    } else {
+        OpeningScroll::PlaceAndWatch
+    }
 }
 
 /// The (fractional) hour to place at the top of the viewport for `initial`.
@@ -873,22 +904,44 @@ mod tests {
     }
 
     #[test]
-    fn an_unallocated_grid_is_not_ready_for_its_initial_scroll() {
-        assert!(!scroll_range_is_ready(0.0, 0.0));
+    fn an_unallocated_grid_waits_for_a_range_before_its_opening_scroll() {
+        assert_eq!(opening_scroll_action(0.0, 0.0, 384.0), OpeningScroll::Wait);
     }
 
     #[test]
-    fn a_viewport_with_no_content_measured_yet_is_not_ready() {
-        assert!(!scroll_range_is_ready(0.0, 600.0));
+    fn a_viewport_with_no_content_measured_yet_waits() {
+        assert_eq!(
+            opening_scroll_action(0.0, 600.0, 384.0),
+            OpeningScroll::Wait
+        );
     }
 
     #[test]
-    fn a_grid_taller_than_its_viewport_is_ready() {
-        assert!(scroll_range_is_ready(2400.0, 600.0));
+    fn a_grid_tall_enough_to_reach_the_target_places_it_once_and_stops() {
+        assert_eq!(
+            opening_scroll_action(1152.0, 600.0, 384.0),
+            OpeningScroll::PlaceAndFinish
+        );
     }
 
     #[test]
-    fn a_grid_shorter_than_its_viewport_is_ready_even_though_it_cannot_scroll() {
-        assert!(scroll_range_is_ready(300.0, 600.0));
+    fn a_grid_still_growing_places_what_it_can_and_keeps_watching() {
+        // Measured, but only far enough to scroll 100px against a 384px target.
+        assert_eq!(
+            opening_scroll_action(700.0, 600.0, 384.0),
+            OpeningScroll::PlaceAndWatch
+        );
+    }
+
+    #[test]
+    fn a_grid_that_cannot_reach_the_target_keeps_watching() {
+        // Shorter than its viewport, so there is nothing to scroll and the
+        // placement clamps to zero — where the page already is. Harmless to
+        // repeat, and indistinguishable from a grid still being measured,
+        // which must not be declared finished.
+        assert_eq!(
+            opening_scroll_action(300.0, 600.0, 384.0),
+            OpeningScroll::PlaceAndWatch
+        );
     }
 }
