@@ -55,6 +55,13 @@ the calendar stops leaking the widgets it builds.
 
 ### Fixed
 
+- Week and day view no longer flick through midnight on the way to the hour
+  they open at. The scroll position was applied from an idle callback, which
+  runs at a lower priority than GTK's redraw, so the grid was painted at the
+  top of the day and only then jumped — on every launch, and on every arrow-key
+  or button navigation, which rebuilds three pages at once. An idle that
+  happened to run before the grid was measured did nothing at all, leaving that
+  page at midnight for good.
 - Replying to an iCloud or CalDAV invitation no longer corrupts the event on
   the server. The reply was being spliced into the guest's address instead of
   replacing their response, so Accept, Maybe and Decline sent back an invalid

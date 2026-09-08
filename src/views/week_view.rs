@@ -6,8 +6,8 @@ use crate::views::{
     event_occurs_on_day, event_widget,
 };
 use chrono::{DateTime, Datelike, Local, NaiveDate, NaiveTime, Timelike};
-use gtk::glib;
 use gtk::prelude::*;
+use std::cell::Cell;
 use std::rc::Rc;
 
 /// Bounds for the height (px) of one hour row in the timed grid. The minimum
@@ -97,21 +97,44 @@ fn build_days(
         .child(&grid)
         .build();
 
-    // Land on the requested scroll position once layout settles (the
-    // adjustment's range isn't known until the grid is allocated).
-    let scroll_hours = initial_scroll_hours(&days, today, initial_scroll);
-    glib::idle_add_local_once(glib::clone!(
-        #[weak]
-        scrolled,
-        move || {
-            scrolled
-                .vadjustment()
-                .set_value(scroll_hours * hour_row_height as f64);
+    // Land on the requested scroll position from the adjustment's own
+    // `changed`, which the viewport emits while it is being allocated — inside
+    // the layout phase of a frame, and so before that frame is painted.
+    //
+    // An idle callback cannot do this. GTK's redraw runs at GDK_PRIORITY_REDRAW
+    // (120) and a default idle at G_PRIORITY_DEFAULT_IDLE (200), so the grid
+    // painted at midnight and only then jumped to the hour asked for: a visible
+    // flick on launch, and on every full rebuild that navigation does — three
+    // pages at a time. Worse, an idle that happened to run *before* allocation
+    // found `upper` still zero, clamped the target to zero, and left the page
+    // sitting at midnight for good.
+    let target = initial_scroll_hours(&days, today, initial_scroll) * hour_row_height as f64;
+    // Captures the flag and nothing else. A handler owned by the adjustment
+    // that captured the scrolled window — which owns that adjustment — would be
+    // a reference cycle of exactly the kind `gui_leaks` exists to catch.
+    let placed = Cell::new(false);
+    scrolled.vadjustment().connect_changed(move |adjustment| {
+        if placed.get() || !scroll_range_is_ready(adjustment.upper(), adjustment.page_size()) {
+            return;
         }
-    ));
+        placed.set(true);
+        adjustment.set_value(target);
+    });
 
     root.append(&scrolled);
     root.upcast()
+}
+
+/// Whether a scrolled window's vertical adjustment has been given a real range
+/// yet — the moment at which placing the initial scroll will stick.
+///
+/// Before the grid is allocated, `upper` and `page_size` are both zero and
+/// `set_value` clamps every target to zero, so the placement has to wait for
+/// the adjustment to report a range. It must not wait for a *scrollable*
+/// range: a grid shorter than its viewport never gets one, and a placement
+/// that waits forever leaves the handler live to yank a later scroll back.
+fn scroll_range_is_ready(upper: f64, page_size: f64) -> bool {
+    upper > 0.0 && page_size > 0.0
 }
 
 /// The (fractional) hour to place at the top of the viewport for `initial`.
@@ -847,5 +870,25 @@ mod tests {
                 .all(|layout| layout.cluster == overlap[0].cluster)
         );
         assert_ne!(lone.cluster, overlap[0].cluster);
+    }
+
+    #[test]
+    fn an_unallocated_grid_is_not_ready_for_its_initial_scroll() {
+        assert!(!scroll_range_is_ready(0.0, 0.0));
+    }
+
+    #[test]
+    fn a_viewport_with_no_content_measured_yet_is_not_ready() {
+        assert!(!scroll_range_is_ready(0.0, 600.0));
+    }
+
+    #[test]
+    fn a_grid_taller_than_its_viewport_is_ready() {
+        assert!(scroll_range_is_ready(2400.0, 600.0));
+    }
+
+    #[test]
+    fn a_grid_shorter_than_its_viewport_is_ready_even_though_it_cannot_scroll() {
+        assert!(scroll_range_is_ready(300.0, 600.0));
     }
 }
