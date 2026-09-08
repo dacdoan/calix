@@ -1,27 +1,41 @@
 {
   "app-id": "com.ianswope.Calix",
   "runtime": "org.gnome.Platform",
-  "runtime-version": "48",
+  "runtime-version": "50",
   "sdk": "org.gnome.Sdk",
+  "sdk-extensions": ["org.freedesktop.Sdk.Extension.rust-stable"],
   "command": "calix",
   "finish-args": [
+    "--share=ipc",
     "--share=network",
     "--socket=wayland",
     "--socket=fallback-x11",
+    "--device=dri",
     "--talk-name=org.freedesktop.secrets"
   ],
+  "build-options": {
+    "append-path": "/usr/lib/sdk/rust-stable/bin",
+    "env": {
+      "CARGO_HOME": "/run/build/calix/cargo"
+    }
+  },
   "modules": [
     {
       "name": "calix",
       "buildsystem": "simple",
       "build-commands": [
-        "cargo --offline install --path . --root /app",
+        "cargo --offline build --release --locked",
+        "install -Dm755 target/release/calix /app/bin/calix",
         "install -Dm644 dist/com.ianswope.Calix.desktop /app/share/applications/com.ianswope.Calix.desktop",
         "install -Dm644 dist/com.ianswope.Calix.svg /app/share/icons/hicolor/scalable/apps/com.ianswope.Calix.svg",
         "install -Dm644 dist/com.ianswope.Calix.metainfo.xml /app/share/metainfo/com.ianswope.Calix.metainfo.xml"
       ],
       "sources": [
-        { "type": "dir", "path": ".." },
+        {
+          "type": "git",
+          "url": "https://github.com/ianswope/calix.git",
+          "tag": "v0.7.0"
+        },
         "cargo-sources.json"
       ]
     }

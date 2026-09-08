@@ -140,7 +140,8 @@ scripts/check-installed.sh
 ## Experimental package channels
 
 These definitions are maintained for packagers and contributors, but are not
-currently published as stable end-user channels:
+currently published as stable end-user channels. The maintainer checklist for
+each is in [docs/packaging.md](docs/packaging.md):
 
 - **Flatpak:** `flatpak/com.ianswope.Calix.json` is a local development
   manifest, not a Flathub listing. Generate its locked Cargo sources and build
@@ -201,7 +202,10 @@ Editing and deleting synced CalDAV events works the same as iCloud, including th
 
 ## Connecting Google Calendar
 
-Google is the one provider that needs real setup: Google requires every app to bring its own OAuth client — there's no shared one you can just use. If you just want to try Calix, connect an iCloud or CalDAV account first; those need nothing but a password. Otherwise, setup takes about 10 minutes:
+Google is the one provider that needs real setup: you have to bring your own
+OAuth client. If you just want to try Calix, connect an iCloud or CalDAV
+account first — those need nothing but a password. Otherwise, setup takes about
+10 minutes:
 
 1. Create a project at [console.cloud.google.com](https://console.cloud.google.com) and enable the **Google Calendar API** for it.
 2. Under **Google Auth Platform → Audience**, set the app to External, and add your own Google account under **Test users** (the app stays unverified/"Testing," which is fine for personal use — publishing for public verification is a separate, much heavier process not needed here).
@@ -222,6 +226,22 @@ this is a Google project setting rather than lost local data. Move the OAuth
 consent screen to **Production** to avoid the Testing-mode lifetime; Google may
 show an unverified-app warning and you remain responsible for the project's
 scope and access settings.
+
+### Why Calix can't ship its own Google client
+
+Reading and writing a calendar needs Google's `.../auth/calendar` scope, which
+Google classifies as **restricted**. An app that ships a shared client ID for a
+restricted scope has to pass a CASA (Cloud Application Security Assessment)
+third-party security audit and renew it annually, and the audit is scoped to
+the organization that publishes the app — not something a single-maintainer
+open-source project can carry, and not something that would survive the
+project changing hands.
+
+Bringing your own client also means your calendar data moves between Google and
+your machine under a project you control, with no shared client ID that could
+be rate-limited or revoked for everyone at once. iCloud, Fastmail, Nextcloud
+and other CalDAV servers have no equivalent requirement, which is why they need
+only a password.
 
 If you previously connected Google before Calix had multi-account storage, the next automatic or manual refresh will migrate that older saved token into the new account model.
 
