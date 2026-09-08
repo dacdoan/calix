@@ -381,6 +381,25 @@ fn swipe_delta(index: u32) -> Option<i32> {
     }
 }
 
+/// How many pages a full rebuild leaves in the carousel: previous, current
+/// and next.
+const PAGES_PER_REBUILD: u32 = 3;
+
+/// Which carousel child a one-period step should animate onto, with three
+/// pages parked on the middle one.
+///
+/// The inverse of `swipe_delta`. Landing on index 0 or 2 makes the carousel
+/// emit the same `page-changed` a swipe would, so a button press and a swipe
+/// finish down one path instead of two. Anything but a single period has no
+/// neighbour already built to move onto.
+fn step_target_index(delta: i32) -> Option<u32> {
+    match delta {
+        -1 => Some(0),
+        1 => Some(2),
+        _ => None,
+    }
+}
+
 struct State {
     view_mode: ViewMode,
     current_date: NaiveDate,
@@ -940,6 +959,33 @@ impl Ui {
         drop(state);
 
         self.reset_with(scroll);
+    }
+
+    /// Moves one period by animating onto the neighbor page the carousel is
+    /// already holding, and lets the resulting `page-changed` finish the job
+    /// through `advance` — the same path a swipe takes.
+    ///
+    /// `navigate` is the wrong tool for a single step from a button. It
+    /// rebuilds all three pages, which destroys and re-creates the page the
+    /// user is looking at; `advance`'s own comment is that doing so makes the
+    /// whole view flicker. There is no reason a button press should take the
+    /// worse path when the page it is moving to is built and attached already.
+    ///
+    /// Falls back to the rebuild whenever there is nothing trustworthy to
+    /// animate onto: more than one period, an unsettled carousel (whose
+    /// neighbors are not the periods they look like), or a carousel that isn't
+    /// holding the usual three pages.
+    fn step(self: &Rc<Self>, delta: i32) {
+        let Some(index) = step_target_index(delta) else {
+            self.navigate(delta);
+            return;
+        };
+        if !self.sync.get().is_settled() || self.carousel.n_pages() != PAGES_PER_REBUILD {
+            self.navigate(delta);
+            return;
+        }
+        self.carousel
+            .scroll_to(&self.carousel.nth_page(index), true);
     }
 
     /// Completes a swipe: the user has already animated onto a neighbor page,
@@ -2131,13 +2177,13 @@ fn connect_handlers(
     prev_button.connect_clicked(clone!(
         #[weak]
         ui,
-        move |_| ui.navigate(-1)
+        move |_| ui.step(-1)
     ));
 
     next_button.connect_clicked(clone!(
         #[weak]
         ui,
-        move |_| ui.navigate(1)
+        move |_| ui.step(1)
     ));
 
     for (toggle, mode) in [
@@ -5189,5 +5235,30 @@ mod tests {
     #[test]
     fn landing_on_the_middle_page_is_our_own_centering_not_a_swipe() {
         assert_eq!(swipe_delta(1), None);
+    }
+
+    #[test]
+    fn a_step_back_animates_onto_the_first_page() {
+        assert_eq!(step_target_index(-1), Some(0));
+    }
+
+    #[test]
+    fn a_step_forward_animates_onto_the_last_page() {
+        assert_eq!(step_target_index(1), Some(2));
+    }
+
+    #[test]
+    fn a_step_of_more_than_one_period_has_no_page_to_animate_onto() {
+        assert_eq!(step_target_index(0), None);
+        assert_eq!(step_target_index(2), None);
+        assert_eq!(step_target_index(-3), None);
+    }
+
+    #[test]
+    fn a_step_lands_on_the_page_a_swipe_of_the_same_delta_would_report() {
+        for delta in [-1, 1] {
+            let index = step_target_index(delta).expect("a single period steps");
+            assert_eq!(swipe_delta(index), Some(delta));
+        }
     }
 }

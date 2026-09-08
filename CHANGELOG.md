@@ -55,6 +55,12 @@ the calendar stops leaking the widgets it builds.
 
 ### Fixed
 
+- The previous/next arrows and Ctrl+← / Ctrl+→ no longer flash the wrong
+  period on the way. They rebuilt all three carousel pages, destroying and
+  re-creating the very page being looked at, while a swipe of the same distance
+  reused it. They now animate onto the neighbouring page the carousel is
+  already holding, exactly as a swipe does, and fall back to the rebuild only
+  when there is no trustworthy page to move onto.
 - Week and day view no longer flick through midnight on the way to the hour
   they open at. The scroll position was applied from an idle callback, which
   runs at a lower priority than GTK's redraw, so the grid was painted at the
