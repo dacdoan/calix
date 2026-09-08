@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 — 2026-09-08
+
+Events can be copied onto another day, changes taken back with Ctrl+Z, and
+locations completed while they're typed. Seven CalDAV sync bugs are fixed, and
+the calendar stops leaking the widgets it builds.
 
 ### Added
 

@@ -38,11 +38,11 @@
   <screenshots>
     <screenshot type="default">
       <caption>Month view</caption>
-      <image>https://raw.githubusercontent.com/ianswope/calix/v0.2.0/docs/screenshots/month.png</image>
+      <image>https://raw.githubusercontent.com/ianswope/calix/v0.7.0/docs/screenshots/month.png</image>
     </screenshot>
     <screenshot>
       <caption>Week view</caption>
-      <image>https://raw.githubusercontent.com/ianswope/calix/v0.2.0/docs/screenshots/week.png</image>
+      <image>https://raw.githubusercontent.com/ianswope/calix/v0.7.0/docs/screenshots/week.png</image>
     </screenshot>
   </screenshots>
 
@@ -54,6 +54,25 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.7.0" date="2026-09-08">
+      <description>
+        <p>
+          Events can be copied, cut and pasted onto another day or hour, and a
+          visible selection marks the event or slot the keyboard is acting on.
+        </p>
+        <p>
+          Ctrl+Z takes back creating, editing, moving, resizing or deleting an
+          event, on synced calendars as well as local ones, and the Location
+          field completes addresses as it is typed.
+        </p>
+        <p>
+          Seven CalDAV sync bugs are fixed, including invitation replies that
+          corrupted the event on the server and a namespace mismatch that could
+          make a sync treat every cached event as deleted. Calix also no longer
+          leaks the widgets it rebuilds after each sync, edit and navigation.
+        </p>
+      </description>
+    </release>
     <release version="0.6.0" date="2026-08-21">
       <description>
         <p>

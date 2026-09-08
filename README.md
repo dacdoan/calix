@@ -54,7 +54,7 @@ silently failing.
   </picture>
 </details>
 
-See [what changed in Calix 0.5.0](CHANGELOG.md).
+See [what changed in Calix 0.7.0](CHANGELOG.md).
 
 ## Install (recommended)
 
