@@ -66,6 +66,20 @@ the calendar stops leaking the widgets it builds.
   runs at a lower priority than GTK's redraw, so the grid was painted at the
   top of the day and only then jumped. An idle that ran before the grid was
   measured did nothing at all, leaving that page at midnight for good.
+- Closing and reopening the window while background alerts hold the process no
+  longer starts a second set of alert, sync and logind loops on top of the ones
+  already running.
+- A failed alert query no longer advances the checkpoint past the events it
+  never managed to read, which silently skipped their alerts.
+- Answering a Google invitation tells the other guests, instead of changing the
+  reply where only the organiser would ever see it.
+- CalDAV events the server has cancelled are skipped rather than cached as
+  ordinary appointments.
+- A sync no longer overwrites a local edit that hasn't been pushed yet.
+- A calendar's show/hide switch goes back to where it was when the store
+  refuses the change, rather than showing a state that was never saved.
+- An alert set on a recurring event is carried onto the occurrences a sync
+  expands, so it survives the first sync after it was set.
 - Replying to an iCloud or CalDAV invitation no longer corrupts the event on
   the server. The reply was being spliced into the guest's address instead of
   replacing their response, so Accept, Maybe and Decline sent back an invalid
