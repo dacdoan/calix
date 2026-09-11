@@ -2241,6 +2241,7 @@ fn connect_handlers(
             let today = Local::now().date_naive();
             ui.state.borrow_mut().current_date = today;
             ui.reset();
+            ui.refresh_now_line();
         }
     ));
 
