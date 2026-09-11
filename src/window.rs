@@ -1854,14 +1854,14 @@ fn build(app: &adw::Application, date: Option<NaiveDate>, show_window: bool) {
     ));
 
     let header = adw::HeaderBar::new();
-    header.pack_start(&today_button);
-    header.pack_start(&nav_box);
+    header.pack_start(&calendars_button);
+    header.pack_start(&search_button);
+    header.pack_start(&new_event_button);
+    header.pack_start(&zoom_box);
+    header.pack_start(&view_toggle_box);
     header.set_title_widget(Some(&ui.title_label));
-    header.pack_end(&view_toggle_box);
-    header.pack_end(&zoom_box);
-    header.pack_end(&new_event_button);
-    header.pack_end(&search_button);
-    header.pack_end(&calendars_button);
+    header.pack_end(&nav_box);
+    header.pack_end(&today_button);
 
     let paned = gtk::Paned::new(gtk::Orientation::Horizontal);
     paned.set_start_child(Some(&calendar_sidebar));
@@ -1878,6 +1878,7 @@ fn build(app: &adw::Application, date: Option<NaiveDate>, show_window: bool) {
     let window = adw::ApplicationWindow::builder()
         .application(app)
         .title("Calix")
+        .icon_name("calix")
         .default_width(1100)
         .default_height(750)
         .content(&ui.toast_overlay)
