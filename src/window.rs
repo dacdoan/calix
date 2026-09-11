@@ -1526,7 +1526,7 @@ fn build(app: &adw::Application, date: Option<NaiveDate>, show_window: bool) {
     }));
 
     let carousel = adw::Carousel::builder()
-        .allow_scroll_wheel(true)
+        .allow_scroll_wheel(false)
         .hexpand(true)
         .vexpand(true)
         .build();
