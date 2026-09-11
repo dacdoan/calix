@@ -19,7 +19,7 @@ pub fn parse_date_arg(args: &[String]) -> Result<Option<NaiveDate>, String> {
 }
 
 /// First day of the week, matching Apple/Google Calendar's US default.
-const WEEK_START: Weekday = Weekday::Sun;
+const WEEK_START: Weekday = Weekday::Mon;
 
 /// The start (WEEK_START) of the week containing `date`.
 pub fn week_start(date: NaiveDate) -> NaiveDate {
