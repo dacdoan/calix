@@ -100,6 +100,8 @@ EOF
 UNINSTALL
 chmod +x "$STAGE/uninstall.sh"
 
+strip -s "$STAGE/bin/calix"
+
 tar -C "$ROOT_DIR/target/dist" -czf "$ROOT_DIR/target/dist/$PACKAGE.tar.gz" "$PACKAGE"
 
 echo "Built $ROOT_DIR/target/dist/$PACKAGE.tar.gz"
