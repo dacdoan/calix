@@ -401,7 +401,7 @@ pub(crate) fn build(
     let cancel_button = gtk::Button::with_label("Cancel");
     let save_button = gtk::Button::builder()
         .label("Save")
-        .css_classes(["suggested-action"])
+        // .css_classes(["suggested-action"])
         .build();
 
     let header = adw::HeaderBar::new();
