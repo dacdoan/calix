@@ -7,7 +7,7 @@ use crate::views::{
 use chrono::{Datelike, Local, NaiveDate, NaiveTime};
 use gtk::prelude::*;
 
-const WEEKDAY_LABELS: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAY_LABELS: [&str; 7] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MAX_CHIPS_PER_CELL: usize = 3;
 
 /// Builds a full month-grid page (weekday header + 6x7 day cells) anchored

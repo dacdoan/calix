@@ -13,7 +13,7 @@ use std::rc::Rc;
 
 /// Weekday initials above each thumbnail, starting on the same day
 /// `week_start` uses.
-const WEEKDAY_INITIALS: [&str; 7] = ["S", "M", "T", "W", "T", "F", "S"];
+const WEEKDAY_INITIALS: [&str; 7] = ["M", "T", "W", "T", "F", "S", "S"];
 
 /// One cell of a month thumbnail.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

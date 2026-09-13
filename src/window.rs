@@ -855,6 +855,28 @@ impl Ui {
         let prev_page = self.build_page(view_mode, prev_date, scroll);
         let next_page = self.build_page(view_mode, next_date, scroll);
 
+        // Force viewport translation update once geometry is fully allocated 
+        if matches!(view_mode, ViewMode::Week | ViewMode::Day) {
+            for page in [&prev_page, &current_page, &next_page] {
+                page.add_tick_callback(move |widget, _clock| {
+                    if widget.width() > 0 {
+                        if let Some(scrolled) = widget.last_child().and_downcast::<gtk::ScrolledWindow>() {
+                            let vadj = scrolled.vadjustment();
+                            let v = vadj.value();
+                            if v > 0.0 {
+                                // Nudging the adjustment forces GTK to redraw the grid at the correct scroll offset
+                                vadj.set_value(0.0);
+                                vadj.set_value(v);
+                            }
+                        }
+                        glib::ControlFlow::Break
+                    } else {
+                        glib::ControlFlow::Continue
+                    }
+                });
+            }
+        }
+
         self.carousel.append(&prev_page);
         self.carousel.append(&current_page);
         self.carousel.append(&next_page);
@@ -1617,7 +1639,7 @@ fn build(app: &adw::Application, date: Option<NaiveDate>, show_window: bool) {
     // window yet, the control itself is the only place a binding can be
     // discovered.
     let today_button = gtk::Button::builder().label("Today").build();
-    today_button.add_css_class("header-small");
+    // today_button.add_css_class("header-small");
     today_button.set_tooltip_text(Some("Jump to today (Ctrl+T)"));
     // Header-bar children default to valign fill, which stretches buttons to
     // the bar's full content height — natural (small) height needs center.
@@ -1858,10 +1880,10 @@ fn build(app: &adw::Application, date: Option<NaiveDate>, show_window: bool) {
     header.pack_start(&search_button);
     header.pack_start(&new_event_button);
     header.pack_start(&zoom_box);
-    header.pack_start(&view_toggle_box);
     header.set_title_widget(Some(&ui.title_label));
     header.pack_end(&nav_box);
     header.pack_end(&today_button);
+    header.pack_end(&view_toggle_box);
 
     let paned = gtk::Paned::new(gtk::Orientation::Horizontal);
     paned.set_start_child(Some(&calendar_sidebar));
