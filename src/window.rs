@@ -1375,7 +1375,7 @@ impl Ui {
                             return;
                         };
                         ui.state.borrow_mut().current_date = picked;
-                        set_view_mode(&ui, ViewMode::Day);
+                        set_view_mode(&ui, ViewMode::Month);
                         ui.reset();
                     }),
                 )
