@@ -474,7 +474,7 @@ pub(crate) fn build(
     let selected_target = create_targets
         .iter()
         .position(|target| {
-            target.calendar_id() == editing.as_ref().map_or(1, |event| event.calendar_id)
+            target.calendar_id() == editing.as_ref().map_or(2, |event| event.calendar_id)
         })
         .filter(|position| !collapsible || *position < visible_count)
         .unwrap_or(0);
