@@ -687,6 +687,27 @@ pub(crate) fn build(
         }
     ));
 
+    let key_controller = gtk::EventControllerKey::new();
+    key_controller.set_propagation_phase(gtk::PropagationPhase::Capture);
+    
+    // Manually create a weak reference to avoid macro syntax issues
+    let save_button_weak = save_button.downgrade();
+    
+    key_controller.connect_key_pressed(move |_, keyval, _, _| {
+        // Attempt to upgrade to a strong reference; if the button is gone, just proceed
+        let Some(save_button) = save_button_weak.upgrade() else {
+            return gtk::glib::Propagation::Proceed;
+        };
+
+        if keyval == gtk::gdk::Key::Return || keyval == gtk::gdk::Key::KP_Enter {
+            save_button.emit_clicked();
+            gtk::glib::Propagation::Stop
+        } else {
+            gtk::glib::Propagation::Proceed
+        }
+    });
+    title_row.add_controller(key_controller);
+
     // Weak for the same reason as Delete's: Save is inside the dialog it would
     // otherwise pin. The async callbacks below take strong references of their
     // own, which is right — they must outlive the click, and they end.
