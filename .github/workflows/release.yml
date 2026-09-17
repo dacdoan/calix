@@ -2,6 +2,11 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      debug:
+        type: boolean
+        description: VSCode
+        default: false
 
 env:
   CFLAGS: "-march=x86-64-v3"
@@ -21,6 +26,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-4-dev libadwaita-1-dev pkg-config
       - run: scripts/build-release.sh
+      - name: VSCode
+        if: ${{ inputs.debug == true }}
+        uses: fawazahmed0/action-debug-vscode@main
       - uses: actions/upload-artifact@v7
         with:
           name: release
