@@ -31,21 +31,7 @@ pub fn timed_event_widget(
     let button = event_button_with_padding(event, css_class, min_height, 0, false);
     let ev = event.clone();
     let click = on_click.clone();
-    let double_click = gtk::GestureClick::new();
-    let anchor = button.clone();
-    double_click.connect_released(move |gesture, presses, _, _| {
-        if presses < 2 {
-            return;
-        }
-        let Some(widget) = gesture.widget() else {
-            return;
-        };
-        click(ev.clone(), widget.clone().upcast());
-        // Keep the click from also firing through the button's default
-        // activation path; the edit form is explicitly opened on double-click.
-        let _ = anchor.clone().upcast::<gtk::Widget>().activate();
-    });
-    button.add_controller(double_click);
+    button.connect_clicked(move |btn| click(ev.clone(), btn.clone().upcast()));
     // The ring goes on the button, which is also what a click hands to the
     // selection — so a redraw puts it back exactly where it was.
     selected.restore(event.id, &button);
@@ -87,12 +73,8 @@ pub fn timed_event_widget(
         // pixels tall at the block's edge, so a popover pointing at it would
         // appear to belong to whatever sits above or below.
         let anchor = button.clone();
-        click_gesture.connect_released(move |gesture, presses, _, _| {
-            if presses < 2 {
-                return;
-            }
-            on_click(ev.clone(), anchor.clone().upcast());
-        });
+        click_gesture
+            .connect_released(move |_, _, _, _| on_click(ev.clone(), anchor.clone().upcast()));
         handle.add_controller(click_gesture);
 
         overlay.add_overlay(&handle);
