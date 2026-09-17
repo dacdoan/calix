@@ -669,6 +669,16 @@ pub(crate) fn build(
     toolbar_view.set_content(Some(&scroller));
     dialog.set_child(Some(&toolbar_view));
 
+    // Focus the title field, delay the focus request
+    // until the dialog has been presented so the widget is mapped and ready.
+    glib::idle_add_local_once(clone!(
+        #[weak]
+        title_row,
+        move || {
+            title_row.grab_focus();
+        }
+    ));
+
     cancel_button.connect_clicked(clone!(
         #[weak]
         dialog,
