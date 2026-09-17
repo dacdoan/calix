@@ -418,6 +418,8 @@ fn day_column(
     col.set_size_request(1, -1);
     if day == today {
         col.add_css_class("today-column");
+    } else if matches!(day.weekday(), chrono::Weekday::Sat | chrono::Weekday::Sun) {
+        col.add_css_class("weekend");
     }
 
     for hour in 0..24u32 {

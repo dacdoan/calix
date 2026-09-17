@@ -85,6 +85,8 @@ fn day_cell(
     cell.add_css_class("month-cell");
     if date == today {
         cell.add_css_class("today-cell");
+    } else if matches!(date.weekday(), chrono::Weekday::Sat | chrono::Weekday::Sun) {
+        cell.add_css_class("weekend");
     }
 
     let number_label = gtk::Label::new(Some(&date.day().to_string()));

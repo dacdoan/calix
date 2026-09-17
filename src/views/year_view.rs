@@ -118,6 +118,9 @@ pub(crate) fn month_thumbnail(
         }
 
         let button = gtk::Button::builder().css_classes(["flat"]).build();
+        if cell.date != today && matches!(cell.date.weekday(), chrono::Weekday::Sat | chrono::Weekday::Sun) {
+            button.add_css_class("weekend");
+        }
         button.set_child(Some(&label));
         button.set_tooltip_text(Some(&cell.date.format("%A, %B %-d").to_string()));
         let date = cell.date;
