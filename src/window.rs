@@ -506,6 +506,7 @@ struct Ui {
     // itself, so a rebuilt page can put it back on the new widget.
     slots: SlotSelection,
     events: EventSelection,
+    month_toggle: gtk::ToggleButton,
 }
 
 /// Which way through the history one keypress goes.
@@ -1375,8 +1376,7 @@ impl Ui {
                             return;
                         };
                         ui.state.borrow_mut().current_date = picked;
-                        set_view_mode(&ui, ViewMode::Month);
-                        ui.reset();
+                        ui.month_toggle.set_active(true);
                     }),
                 )
             }
@@ -1567,6 +1567,15 @@ fn build(app: &adw::Application, date: Option<NaiveDate>, show_window: bool) {
     title_label.set_ellipsize(gtk::pango::EllipsizeMode::End);
     title_label.set_width_chars(12);
     title_label.set_max_width_chars(28);
+    let year_toggle = gtk::ToggleButton::builder()
+        .label("Year")
+        .active(initial_view_mode == ViewMode::Year)
+        .build();
+    let month_toggle = gtk::ToggleButton::builder()
+        .label("Month")
+        .group(&year_toggle)
+        .active(initial_view_mode == ViewMode::Month)
+        .build();
 
     let ui = Rc::new(Ui {
         carousel: carousel.clone(),
@@ -1591,6 +1600,7 @@ fn build(app: &adw::Application, date: Option<NaiveDate>, show_window: bool) {
         clipboard: Rc::new(RefCell::new(None)),
         slots: SlotSelection::default(),
         events: EventSelection::default(),
+        month_toggle: month_toggle.clone(),
     });
 
     LIVE_UI.with(|live| live.replace(Some(ui.clone())));
@@ -1653,15 +1663,6 @@ fn build(app: &adw::Application, date: Option<NaiveDate>, show_window: bool) {
     nav_box.append(&prev_button);
     nav_box.append(&next_button);
 
-    let year_toggle = gtk::ToggleButton::builder()
-        .label("Year")
-        .active(initial_view_mode == ViewMode::Year)
-        .build();
-    let month_toggle = gtk::ToggleButton::builder()
-        .label("Month")
-        .group(&year_toggle)
-        .active(initial_view_mode == ViewMode::Month)
-        .build();
     let week_toggle = gtk::ToggleButton::builder()
         .label("Week")
         .group(&year_toggle)
