@@ -1876,7 +1876,12 @@ fn build(app: &adw::Application, date: Option<NaiveDate>, show_window: bool) {
         }
     ));
 
+    let logo_button = gtk::Button::from_icon_name("calix");
+    logo_button.set_tooltip_text(Some("Close window"));
+    logo_button.add_css_class("logo_button");
+
     let header = adw::HeaderBar::new();
+    header.pack_start(&logo_button);
     header.pack_start(&calendars_button);
     header.pack_start(&search_button);
     header.pack_start(&new_event_button);
@@ -1906,6 +1911,14 @@ fn build(app: &adw::Application, date: Option<NaiveDate>, show_window: bool) {
         .default_height(750)
         .content(&ui.toast_overlay)
         .build();
+
+    logo_button.connect_clicked(clone!(
+        #[weak]
+        window,
+        move |_| {
+            window.close();
+        }
+    ));
 
     window.connect_close_request(|window| {
         if hide_window_instead_of_destroying(session_keeps_running()) {
